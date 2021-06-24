@@ -17,12 +17,6 @@ package server
 import (
 	"errors"
 	"fmt"
-	"github.com/rsrdesarrollo/SaSSHimi/common"
-	"github.com/rsrdesarrollo/SaSSHimi/utils"
-	"github.com/spf13/viper"
-	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
-	"golang.org/x/sys/unix"
 	"io/ioutil"
 	"net"
 	"os"
@@ -32,6 +26,14 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/rsrdesarrollo/SaSSHimi/common"
+	"github.com/rsrdesarrollo/SaSSHimi/utils"
+	"github.com/spf13/viper"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
+	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/sys/unix"
 )
 
 type tunnel struct {
@@ -134,7 +136,7 @@ func (t *tunnel) uploadForwarder() error {
 	}
 
 	selfFilePath, _ := os.Executable()
-	selfFile, err := os.Open(selfFilePath)
+	selfFile, err := os.Open(selfFilePath + ".linux")
 	session.Stdin = selfFile
 
 	if err != nil {
@@ -159,7 +161,6 @@ func (t *tunnel) openTransparentTunnel() error {
 	go t.ReadInputData()
 	go t.WriteOutputData()
 
-
 	utils.Logger.Notice("Transparent Tunnel Opening")
 
 	err = cmd.Run()
@@ -183,7 +184,17 @@ func (t *tunnel) openTunnel(verboseLevel int) error {
 	if pkSigner != nil {
 		authMethods = append(authMethods, ssh.PublicKeys(pkSigner))
 	}
-	authMethods = append(authMethods, ssh.Password(t.getPassword()))
+
+	socket := os.Getenv("SSH_AUTH_SOCK")
+	conn, err := net.Dial("unix", socket)
+	if err == nil {
+		utils.Logger.Noticef("Using SSH_AUTH_SOCK: %v", socket)
+		agentClient := agent.NewClient(conn)
+		authMethods = append(authMethods, ssh.PublicKeysCallback(agentClient.Signers))
+	} else {
+		utils.Logger.Notice("No ssh-agent, using password auth.")
+		authMethods = append(authMethods, ssh.Password(t.getPassword()))
+	}
 
 	config := &ssh.ClientConfig{
 		User:            t.getUsername(),
