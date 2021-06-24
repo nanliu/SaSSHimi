@@ -337,9 +337,9 @@ func Run(viper *viper.Viper, bindAddress string, verboseLevel int) {
 
 	tunnel := newTunnel(viper)
 
-	termios, _ := unix.IoctlGetTermios(int(syscall.Stdin), unix.TCGETS)
+	termios, _ := unix.IoctlGetTermios(int(syscall.Stdin), unix_GETATTR)
 	onExit := func() {
-		unix.IoctlSetTermios(int(syscall.Stdin), unix.TCGETS, termios)
+		unix.IoctlSetTermios(int(syscall.Stdin), unix_GETATTR, termios)
 		tunnel.Terminate()
 
 		utils.Logger.Notice("Waiting to remote process to clean up...")
