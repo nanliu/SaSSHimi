@@ -96,6 +96,19 @@ func (t *tunnel) getUsername() string {
 	return user
 }
 
+func (t *tunnel) getFilePath() string {
+	var fpath string
+	osarch := t.viper.GetString("OSArch")
+	binaryPath, _ := os.Executable()
+	if osarch == "" {
+		fpath = binaryPath
+	} else {
+		fpath = binaryPath + "." + osarch
+	}
+	utils.Logger.Debug("Uploading binary:", fpath)
+	return fpath
+}
+
 func (t *tunnel) getPassword() string {
 	password := t.viper.GetString("Password")
 	if password == "" {
@@ -135,8 +148,10 @@ func (t *tunnel) uploadForwarder() error {
 		return errors.New("Failed to create session: " + err.Error())
 	}
 
-	selfFilePath, _ := os.Executable()
-	selfFile, err := os.Open(selfFilePath + ".linux")
+	selfFile, err := os.Open(t.getFilePath())
+	if err != nil {
+		return errors.New("Failed to upload binary: " + err.Error())
+	}
 	session.Stdin = selfFile
 
 	if err != nil {

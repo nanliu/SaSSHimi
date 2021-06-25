@@ -15,14 +15,16 @@
 package cli
 
 import (
+	"strings"
+
 	"github.com/rsrdesarrollo/SaSSHimi/server"
 	"github.com/rsrdesarrollo/SaSSHimi/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"strings"
 )
 
 var idFile string
+var osArch string
 
 // serverCmd represents the server command
 var serverCmd = &cobra.Command{
@@ -43,6 +45,7 @@ var serverCmd = &cobra.Command{
 
 		utils.Logger.Debug("Parsed User:", user)
 		utils.Logger.Debug("Parsed Remote Host:", remoteHost)
+		utils.Logger.Debug("Parsed OSARCH:", osArch)
 
 		if user != "" {
 			subv.Set("User", user)
@@ -50,6 +53,7 @@ var serverCmd = &cobra.Command{
 
 		subv.SetDefault("RemoteHost", remoteHost)
 		subv.SetDefault("PrivateKey", idFile)
+		subv.SetDefault("OSArch", osArch)
 
 		server.Run(subv, bindAddress, verboseLevel)
 	},
@@ -60,4 +64,5 @@ func init() {
 
 	serverCmd.Flags().StringVar(&bindAddress, "bind", "127.0.0.1:1080", "Set local bind address and port")
 	serverCmd.Flags().StringVarP(&idFile, "identity_file", "i", "", "Path to private key")
+	serverCmd.Flags().StringVarP(&osArch, "os_arch", "o", "", "Server OS_ARCH if different from client (linux_amd64, macos_arm)")
 }

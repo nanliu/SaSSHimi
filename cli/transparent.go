@@ -19,7 +19,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 var transparentCmd = &cobra.Command{
 	Use:   "transparent <tunnel_command>",
 	Short: "Run local server to create tunnels executing transparent command",
